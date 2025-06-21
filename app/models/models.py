@@ -1,4 +1,5 @@
 from app.extensions import db
+from datetime import datetime
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -27,3 +28,12 @@ class Enrollment(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
     progress = db.Column(db.Integer, default=0)
+
+class Chat(db.Model):
+    __tablename__ = 'chats'
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    response = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+

@@ -1,28 +1,28 @@
 from flask import Flask
-from flask_restx import Api
 from .config import Config
 from .extensions import db, migrate, jwt
 
-# Import route namespaces
-from .routes.auth_routes import api as auth_ns
-from .routes.student_routes import api as student_ns
-from .routes.instructor_routes import api as instructor_ns
+# Import your blueprints (routes)
+from app.auth.routes import auth_bp
+# from app.routes.auth import auth_bp
+# from app.routes.student import student_bp
+# from app.routes.instructor import instructor_bp
+
+# Import models to register with SQLAlchemy
+from app.models import models  # Needed for migrations
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Initialize extensions
+    # Initialize Flask extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # API setup
-    api = Api(app, title="Student Dashboard API", version="1.0", doc="/docs")
-
-    # Register Namespaces
-    api.add_namespace(auth_ns, path="/auth")
-    api.add_namespace(student_ns, path="/student")
-    api.add_namespace(instructor_ns, path="/instructor")
+    # Register Blueprints
+    app.register_blueprint(auth_bp)
+    # app.register_blueprint(student_bp, url_prefix="/student")
+    # app.register_blueprint(instructor_bp, url_prefix="/instructor")
 
     return app

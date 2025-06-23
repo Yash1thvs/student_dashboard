@@ -16,6 +16,7 @@ def create_course():
     if not user or user.role != "instructor":
         return jsonify({"msg": "Unauthorized access"}), 403
 
+
     data = request.get_json()
     name = data.get("name")
     thumbnail = data.get("thumbnail")
@@ -45,23 +46,44 @@ def create_course():
 @jwt_required()
 def get_instructor_courses():
     current_user_id = int(get_jwt_identity())
-    user = User.query.get(current_user_id)
+    instructor = User.query.get(current_user_id)
 
-    if not user or user.role != "instructor":
+    if not instructor or instructor.role != "instructor":
         return jsonify({"msg": "Unauthorized access"}), 403
 
-    courses = Course.query.filter_by(instructor_id=user.id).all()
-    course_list = [
-        {
+    courses = Course.query.filter_by(instructor_id=instructor.id).all()
+    result = []
+
+    for course in courses:
+        enrollments = Enrollment.query.filter_by(course_id=course.id).all()
+
+        enrolled_students = []
+        total_progress = 0
+        for enrollment in enrollments:
+            student = User.query.get(enrollment.student_id)
+            enrolled_students.append({
+                "id": student.id,
+                "name": student.name,
+                "progress": enrollment.progress
+            })
+            total_progress += enrollment.progress
+
+        enrollment_count = len(enrollments)
+        completion_percentage = (
+            int(total_progress / enrollment_count) if enrollment_count > 0 else 0
+        )
+
+        result.append({
             "id": course.id,
             "name": course.name,
             "thumbnail": course.thumbnail,
-            "due_date": course.due_date.strftime("%Y-%m-%d")
-        }
-        for course in courses
-    ]
+            "due_date": course.due_date.strftime("%Y-%m-%d"),
+            "enrollment_count": enrollment_count,
+            "completion_percentage": completion_percentage,
+            "enrolled_students": enrolled_students
+        })
 
-    return jsonify(course_list), 200
+    return jsonify(result), 200
 
 # GET /instructor/courses/<course_id>/students
 @instructor.route("/courses/<int:course_id>/students", methods=["GET"])
